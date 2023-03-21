@@ -1,8 +1,45 @@
 # gcall
-GCALL creates instant Google Meet meetings via the terminal to avoid the need for clicking multiple buttons in the Google UI
+GCALL creates instant Google Meet meetings via the terminal to avoid the need for clicking multiple buttons in the Google UI.
 
-The code consists of two Go files: `callback.go` and `client.go`.
+The meeting is created with the default settings of 'Instant Meeting' and 60 minutes duration. The meeting name and duration can be customized via the command line arguments.
 
-`callback.go` defines an HTTP server that listens on port 8080 for a GET request to `/auth`. When a request is received, it extracts the value of the code parameter from the query string and sends it to a channel. The server can be started and stopped using the `Start` and `Stop` methods of the Server struct.
+The output of the command is the meeting URL link that can be shared with others.
+If `pbcopy` is available on the system, the meeting URL is copied to the clipboard.
 
-`client.go` defines a Google Calendar API client that uses OAuth2 for authentication. When `NewClient` is called, it reads the client credentials from a JSON file, retrieves an OAuth2 token, and creates a `calendar.Service` object that can be used to interact with the Google Calendar API. The client exposes a method `CreateInstantCall` that creates an instant meeting on Google Meet and returns the URL for the video conference. The client also has methods for obtaining and storing the OAuth2 token. The `codeChan` parameter passed to `NewClient` is used to receive the authorization code sent by Google after the user grants permission for the application to access their Google Calendar data.
+
+## Prerequisites
+
+To use this tool, you need to have a Google account and have enabled the Google Calendar API for your account.
+
+### 1. Enable the Google Calendar API
+
+Follow the steps in the [Google Calendar API Quickstart](https://developers.google.com/calendar/quickstart/go) to enable the Google Calendar API for your account.
+
+### 2. Download the credentials.json file
+
+After enabling the Google Calendar API, download the `credentials.json` file and save it in the user home directory.
+
+## Installation
+
+```bash
+go install github.com/abhishekkr/gcall@latest
+```
+
+## Usage
+
+```bash
+### 1. Create a Googe Calendar Meeting with default settings (name as 'Instant Meeting' and duration as 60 minutes)
+$ gcall
+
+### 2. Create a Googe Calendar Meeting with custom name and duration
+$ gcall -name "My Meeting" -duration 30
+```
+
+## Example
+
+![terminal](gcall.gif)
+![google calendar](calendar.png)
+
+## License
+
+[MIT](LICENSE)
