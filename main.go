@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/alesr/gcall/callback"
+	"github.com/alesr/gcall/clipboard"
 	"github.com/alesr/gcall/googlecalendar"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -37,5 +38,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not create instant call: %s", err)
 	}
+
 	fmt.Println(link)
+
+	if clipboard.IsPbCopyAvailable() {
+		if err := clipboard.Copy(link); err != nil {
+			log.Fatalf("could not copy to clipboard: %s", err)
+		}
+
+		fmt.Println("Link copied to clipboard! Ctrl+V to paste it")
+	}
 }
