@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/alesr/gcall/callback"
 	"github.com/alesr/gcall/clipboard"
@@ -17,6 +19,11 @@ func main() {
 		log.Fatalln("failed to create logger", err)
 	}
 	defer logger.Sync()
+
+	meetingName := flag.String("name", "Instant Meeting", "name of the meeting")
+	meetingDuration := flag.Int("duration", 60, "duration of the meeting in minutes")
+
+	flag.Parse()
 
 	codeCh := make(chan string)
 
@@ -34,7 +41,7 @@ func main() {
 		log.Fatalf("could not create client: %s", err)
 	}
 
-	link, err := gCallClient.CreateInstantCall()
+	link, err := gCallClient.CreateInstantCall(*meetingName, time.Duration(*meetingDuration))
 	if err != nil {
 		log.Fatalf("could not create instant call: %s", err)
 	}
@@ -45,7 +52,6 @@ func main() {
 		if err := clipboard.Copy(link); err != nil {
 			log.Fatalf("could not copy to clipboard: %s", err)
 		}
-
 		fmt.Println("Link copied to clipboard! Ctrl+V to paste it")
 	}
 }

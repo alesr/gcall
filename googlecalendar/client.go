@@ -22,6 +22,7 @@ const (
 	credentialsPath     string        = "gcall_credentials.json"
 	redirectURL         string        = "http://localhost:8080/auth"
 	timeZone            string        = "Europe/Bucharest"
+	defaultMeetingName  string        = "Instant meeting"
 	authApprovalTimeout time.Duration = 30 * time.Second
 )
 
@@ -65,15 +66,15 @@ func NewClient(logger *zap.Logger, codeCh chan string) (*Client, error) {
 	return &client, nil
 }
 
-func (c *Client) CreateInstantCall() (string, error) {
+func (c *Client) CreateInstantCall(meetingName string, duration time.Duration) (string, error) {
 	event := &calendar.Event{
-		Summary: "Instant Meeting",
+		Summary: meetingName,
 		Start: &calendar.EventDateTime{
 			DateTime: time.Now().Format(time.RFC3339),
 			TimeZone: timeZone,
 		},
 		End: &calendar.EventDateTime{
-			DateTime: time.Now().Add(60 * time.Minute).Format(time.RFC3339),
+			DateTime: time.Now().Add(duration * time.Minute).Format(time.RFC3339),
 			TimeZone: timeZone,
 		},
 		ConferenceData: &calendar.ConferenceData{
@@ -113,7 +114,6 @@ func (c *Client) getToken(cfg *oauth2.Config) (*oauth2.Token, error) {
 		if err := c.stashToken(newTkn); err != nil {
 			return nil, fmt.Errorf("could not stash token: %w", err)
 		}
-
 		return newTkn, nil
 	}
 	return stashedTkn, nil
