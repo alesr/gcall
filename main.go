@@ -9,6 +9,7 @@ import (
 
 	"github.com/alesr/gcall/callback"
 	"github.com/alesr/gcall/googlecalendar"
+	"github.com/atotto/clipboard"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 )
@@ -51,10 +52,7 @@ func main() {
 
 	fmt.Println(link)
 
-	if clipboard.IsPbCopyAvailable() {
-		if err := clipboard.Copy(link); err != nil {
-			log.Fatalf("could not copy to clipboard: %s", err)
-		}
-		fmt.Println("Link copied to clipboard! Ctrl+V to paste it")
+	if err = clipboard.WriteAll(link); err != nil {
+		log.Fatalf("failed to copy link to clipboard: %s", err)
 	}
 }
