@@ -3,6 +3,7 @@ module github.com/alesr/gcall
 go 1.20
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/go-chi/chi v1.5.4
 	github.com/google/uuid v1.3.0
 	go.uber.org/zap v1.24.0
