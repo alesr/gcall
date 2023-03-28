@@ -42,12 +42,12 @@ func main() {
 
 	gCallClient, err := googlecalendar.NewClient(logger, codeCh)
 	if err != nil {
-		log.Fatalf("could not create client: %s", err)
+		log.Fatalf("failed to create client: %s", err)
 	}
 
 	link, err := gCallClient.CreateInstantCall(*meetingName, time.Duration(*meetingDuration))
 	if err != nil {
-		log.Fatalf("could not create instant call: %s", err)
+		log.Fatalf("failed to create instant call: %s", err)
 	}
 
 	fmt.Println(link)
