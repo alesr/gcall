@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/alesr/gcall/callback"
-	"github.com/alesr/gcall/clipboard"
 	"github.com/alesr/gcall/googlecalendar"
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
@@ -30,9 +30,12 @@ func main() {
 	callbackSrv := callback.NewServer(logger, chi.NewRouter(), codeCh)
 	go callbackSrv.Start()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	defer func() {
-		if err := callbackSrv.Stop(); err != nil {
-			log.Fatalf("could not stop callback server: %s", err)
+		if err := callbackSrv.Stop(ctx); err != nil {
+			log.Fatalf("failed to stop callback server: %s", err)
 		}
 	}()
 

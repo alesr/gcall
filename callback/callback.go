@@ -1,6 +1,7 @@
 package callback
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -30,8 +31,8 @@ func (s *Server) Start() error {
 	return s.httpServer.ListenAndServe()
 }
 
-func (s *Server) Stop() error {
-	return s.httpServer.Close()
+func (s *Server) Stop(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
 }
 
 func authCallbackHandler(codeChan chan string) func(http.ResponseWriter, *http.Request) {
