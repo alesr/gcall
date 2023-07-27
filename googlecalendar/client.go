@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,7 +39,7 @@ func NewClient(logger *zap.Logger, codeCh chan string) (*Client, error) {
 		codeChan: codeCh,
 	}
 
-	credsB, err := ioutil.ReadFile(credentialsPath)
+	credsB, err := os.ReadFile(credentialsPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not read credentials file: %w", err)
 	}
@@ -125,14 +125,14 @@ func (c *Client) stashToken(tkn *oauth2.Token) error {
 		return fmt.Errorf("could not marshal token: %w", err)
 	}
 
-	if err := ioutil.WriteFile(tokenStash, tknB, 0600); err != nil {
+	if err := os.WriteFile(tokenStash, tknB, 0600); err != nil {
 		return fmt.Errorf("could not write token file: %w", err)
 	}
 	return nil
 }
 
 func (c *Client) getStashedToken() (*oauth2.Token, error) {
-	tknB, err := ioutil.ReadFile(tokenStash)
+	tknB, err := os.ReadFile(tokenStash)
 	if err != nil {
 		return nil, fmt.Errorf("could not read token file: %v", err)
 	}
