@@ -19,7 +19,7 @@ import (
 
 const (
 	tokenStash          string        = "/tmp/gcall-token"
-	credentialsPath     string        = "gcall_credentials.json"
+	credentialsFilename string        = ".gcall"
 	redirectURL         string        = "http://localhost:8080/auth"
 	timeZone            string        = "Europe/Bucharest"
 	defaultMeetingName  string        = "Instant meeting"
@@ -33,11 +33,19 @@ type Client struct {
 	calendarService *calendar.Service
 }
 
+// NewClient creates a new Client instance.
+// TODO: inject the calendar service as a dependency.
 func NewClient(logger *zap.Logger, codeCh chan string) (*Client, error) {
 	client := Client{
 		logger:   logger,
 		codeChan: codeCh,
 	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("could not get user home dir: %w", err)
+	}
+	credentialsPath := fmt.Sprintf("%s%s%s", homeDir, string(os.PathSeparator), credentialsFilename)
 
 	credsB, err := os.ReadFile(credentialsPath)
 	if err != nil {
@@ -56,6 +64,7 @@ func NewClient(logger *zap.Logger, codeCh chan string) (*Client, error) {
 
 	client.httpClient = cfg.Client(context.Background(), tkn)
 
+	// TODO: replace deprecated constructor
 	calendarService, err := calendar.New(client.httpClient)
 	if err != nil {
 		return nil, fmt.Errorf("could not create calendar service: %w", err)
@@ -66,6 +75,8 @@ func NewClient(logger *zap.Logger, codeCh chan string) (*Client, error) {
 	return &client, nil
 }
 
+// CreateInstantCall creates an instant call.
+// It creates a new event in the primary calendar with the given name and duration.
 func (c *Client) CreateInstantCall(meetingName string, duration time.Duration) (string, error) {
 	event := &calendar.Event{
 		Summary: meetingName,
@@ -101,6 +112,9 @@ func (c *Client) CreateInstantCall(meetingName string, duration time.Duration) (
 	return "", errors.New("could not create event: no video entry point")
 }
 
+// getToken gets a token.
+// If a token is stashed, it returns the stashed token.
+// Otherwise, it gets a new token from the auth provider.
 func (c *Client) getToken(cfg *oauth2.Config) (*oauth2.Token, error) {
 	stashedTkn, err := c.getStashedToken()
 	if err != nil {
@@ -116,9 +130,11 @@ func (c *Client) getToken(cfg *oauth2.Config) (*oauth2.Token, error) {
 		}
 		return newTkn, nil
 	}
+
 	return stashedTkn, nil
 }
 
+// stashToken writes the given token to the token stash file.
 func (c *Client) stashToken(tkn *oauth2.Token) error {
 	tknB, err := json.Marshal(tkn)
 	if err != nil {
@@ -128,26 +144,31 @@ func (c *Client) stashToken(tkn *oauth2.Token) error {
 	if err := os.WriteFile(tokenStash, tknB, 0600); err != nil {
 		return fmt.Errorf("could not write token file: %w", err)
 	}
+
 	return nil
 }
 
+// getStashedToken reads the token stash file and returns the token.
 func (c *Client) getStashedToken() (*oauth2.Token, error) {
-	tknB, err := os.ReadFile(tokenStash)
+	tokenBytes, err := os.ReadFile(tokenStash)
 	if err != nil {
 		return nil, fmt.Errorf("could not read token file: %v", err)
 	}
 
-	if len(tknB) == 0 {
+	if len(tokenBytes) == 0 {
 		return nil, fmt.Errorf("token file is empty")
 	}
 
-	var tkn oauth2.Token
-	if err := json.Unmarshal(tknB, &tkn); err != nil {
+	var token oauth2.Token
+	if err := json.Unmarshal(tokenBytes, &token); err != nil {
 		return nil, fmt.Errorf("could not unmarshal token: %w", err)
 	}
-	return &tkn, nil
+
+	return &token, nil
 }
 
+// getNewToken gets a new token from the auth provider.
+// It awaits for the auth code coming from the callback server to be sent on the code channel.
 func (c *Client) getNewToken(cfg *oauth2.Config) (*oauth2.Token, error) {
 	authURL := cfg.AuthCodeURL(
 		"state-token",
@@ -159,6 +180,7 @@ func (c *Client) getNewToken(cfg *oauth2.Config) (*oauth2.Token, error) {
 
 	select {
 	case authCode := <-c.codeChan:
+		// exchange the code for a token
 		tkn, err := cfg.Exchange(
 			context.Background(),
 			authCode,
